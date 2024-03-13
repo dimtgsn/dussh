@@ -1,0 +1,14 @@
+env: "dev"
+storage_path: "./storage.db"
+
+http_server:
+  address: "127.0.0.1:8082"
+  timeout: 4s
+  idle_timeout: 30s
+  user: "Shabby8574"
+  password: "24tf02f4jrf"
+  shutdown_timeout: 10s
+
+logger:
+  level: "debug"
+  encoding: "json"

@@ -13,6 +13,9 @@ type Config struct {
 	StoragePath string `yaml:"storage_path" env-required:"true"`
 	HTTPServer  `yaml:"http_server" env-required:"true"`
 	Logger      `yaml:"logger" env-required:"true"`
+	DB          `yaml:"database" env-required:"true"`
+	Redis       `yaml:"redis" env-required:"true"`
+	Auth        `yaml:"auth" env-required:"true"`
 }
 
 type HTTPServer struct {
@@ -24,8 +27,27 @@ type HTTPServer struct {
 	Password        string        `yaml:"password" env-required:"true" env:"HTTP_SERVER_PASSWORD"`
 }
 
+type DB struct {
+	Host     string `yaml:"host" env-required:"true"`
+	Port     int    `yaml:"port" env-default:"5432"`
+	User     string `yaml:"user" env-required:"true"`
+	Password string `yaml:"password" env-required:"true"`
+	DBName   string `yaml:"db_name" env-required:"true"`
+}
+
+type Redis struct {
+	Addr     string `yaml:"addr" env-required:"true"`
+	Password string `yaml:"password" env-required:"true"`
+}
+
+type Auth struct {
+	SecretKey       string        `yaml:"secret_key" env-required:"true" env:"AUTH_SECRET_KEY"`
+	AccessTokenTTL  time.Duration `yaml:"access_token_ttl" env-required:"true"`
+	RefreshTokenTTL time.Duration `yaml:"refresh_token_ttl" env-required:"true"`
+}
+
 type Logger struct {
-	Level    string `yaml:"log_level" env-default:"info"`
+	Level    string `yaml:"log_level" env-default:"debug"`
 	Encoding string `yaml:"encoding" env-default:"json"`
 }
 

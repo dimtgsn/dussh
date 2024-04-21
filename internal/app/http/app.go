@@ -1,12 +1,15 @@
 package httpapp
 
 import (
+	"dussh/internal/app/cache"
+	"dussh/internal/app/rbac"
+	"dussh/internal/app/repo"
+	"dussh/internal/config"
 	httpserver "dussh/internal/http"
-	"dussh/internal/services/auth"
-	authapi "dussh/internal/services/auth/api"
+	"fmt"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"net/http"
-	"time"
 )
 
 type App struct {
@@ -16,30 +19,43 @@ type App struct {
 
 // New creates new http app.
 func New(
-	addr string,
-	readTimeout time.Duration,
-	writeTimeout time.Duration,
-	idleTimeout time.Duration,
+	ctx context.Context,
+	cfg *config.Config,
+	repo *repo.App,
+	cache *cache.App,
+	rbac *rbac.App,
+	log *zap.Logger,
 ) *App {
-	router := httpserver.NewRouter()
+	log.Info("http app creating")
 
+	router := httpserver.NewRouter()
 	baseRouteGroup, err := httpserver.SetAPIPath(router)
 	if err != nil {
 		panic(err)
 	}
 
-	authService :=
-	authAPI := authapi.NewAuthAPI()
-	auth.Routes(baseRouteGroup, authAPI)
+	httpserver.MustNewModules(
+		cfg,
+		baseRouteGroup,
+		repo.PGSQL(),
+		rbac.RoleManager(),
+		cache.Redis(),
+		log,
+	)
 
+	addr := cfg.HTTPServer.Address
+	for _, routeInfo := range router.Routes() {
+		fmt.Printf("Method: %s, Path: %s\n", routeInfo.Method, routeInfo.Path)
+	}
 	server := httpserver.NewServer(
 		addr,
 		router,
-		readTimeout,
-		writeTimeout,
-		idleTimeout,
+		cfg.HTTPServer.Timeout,
+		cfg.HTTPServer.Timeout,
+		cfg.HTTPServer.IdleTimeout,
 	)
 
+	log.Info("http app created", zap.String("addr", addr))
 	return &App{
 		httpServer: server,
 		addr:       addr,

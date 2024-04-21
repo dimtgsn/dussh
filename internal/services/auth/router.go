@@ -1,16 +1,25 @@
 package auth
 
 import (
+	"dussh/internal/services/auth/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-type AuthAPI interface {
+type Api interface {
 	Login(c *gin.Context)
 	Register(c *gin.Context)
+	RefreshToken(c *gin.Context)
+	Logout(c *gin.Context)
 }
 
-func Routes(routeGroup *gin.RouterGroup, auth AuthAPI) {
+func InitRoutes(routeGroup *gin.RouterGroup, api Api, secretKey string) {
 	aGroup := routeGroup.Group("auth")
-	aGroup.POST("/register/", auth.Register)
-	aGroup.POST("/login", auth.Login)
+
+	aGroup.POST("/register/", api.Register)
+	aGroup.POST("/login/", api.Login)
+
+	withJWTAuthGroup := aGroup.Group("").Use(middleware.JWTAuth(secretKey))
+
+	withJWTAuthGroup.POST("/logout/", api.Logout)
+	withJWTAuthGroup.POST("/refresh-token/", api.RefreshToken)
 }

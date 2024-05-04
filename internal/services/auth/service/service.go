@@ -52,14 +52,6 @@ type authService struct {
 // Register registers new user and returns user ID.
 // If user with given email already exists, returns error.
 func (as *authService) Register(ctx context.Context, user *models.User) (int64, error) {
-	//exists, err := as.repo.CheckUserExists(ctx, user.Email)
-	//if err != nil {
-	//	return 0, err
-	//}
-	//if exists {
-	//	return 0, repository.ErrUserAlreadyExists
-	//}
-
 	hashPassword, err := bcrypt.GenerateFromPassword(
 		bytesconv.StringToBytes(user.Password),
 		bcrypt.DefaultCost,

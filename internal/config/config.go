@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"github.com/joho/godotenv"
 	"os"
 	"time"
 
@@ -28,20 +29,20 @@ type HTTPServer struct {
 }
 
 type DB struct {
-	Host     string `yaml:"host" env-required:"true"`
-	Port     int    `yaml:"port" env-default:"5432"`
-	User     string `yaml:"user" env-required:"true"`
-	Password string `yaml:"password" env-required:"true"`
-	DBName   string `yaml:"db_name" env-required:"true"`
+	Host     string `yaml:"host" env:"DATABASE_HOST" env-required:"true"`
+	Port     int    `yaml:"port" env:"DATABASE_PORT" env-default:"5432"`
+	User     string `yaml:"user" env:"DATABASE_USER" env-required:"true"`
+	Password string `yaml:"password" env:"DATABASE_PASSWORD" env-required:"true"`
+	DBName   string `yaml:"db_name" env:"DATABASE_NAME" env-required:"true"`
 }
 
 type Redis struct {
-	Addr     string `yaml:"addr" env-required:"true"`
-	Password string `yaml:"password" env-required:"true"`
+	Addr     string `yaml:"addr" env:"REDIS_ADDR" env-required:"true"`
+	Password string `yaml:"password" env:"REDIS_PASSWORD" env-required:"true"`
 }
 
 type Auth struct {
-	SecretKey       string        `yaml:"secret_key" env-required:"true" env:"AUTH_SECRET_KEY"`
+	SecretKey       string        `yaml:"secret_key" env:"AUTH_SECRET_KEY" env-required:"true"`
 	AccessTokenTTL  time.Duration `yaml:"access_token_ttl" env-required:"true"`
 	RefreshTokenTTL time.Duration `yaml:"refresh_token_ttl" env-required:"true"`
 }
@@ -61,6 +62,11 @@ func MustLoad() *Config {
 }
 
 func MustLoadPath(configPath string) *Config {
+	// load .env file
+	if err := godotenv.Load(); err != nil {
+		panic("error loading .env file")
+	}
+
 	// check if file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		panic("config file does not exist: " + configPath)

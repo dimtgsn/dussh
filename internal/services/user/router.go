@@ -13,6 +13,8 @@ type Api interface {
 	Delete(c *gin.Context)
 }
 
+// TODO добавить auth middleware
+
 func InitRoutes(
 	routeGroup *gin.RouterGroup,
 	api Api,
@@ -20,15 +22,16 @@ func InitRoutes(
 	secretKey string,
 ) {
 	uGroup := routeGroup.Group("users")
-	uGroup.GET("/:id/", api.Get)
+	uGroup.GET("/:id", api.Get)
 
-	uGroup.POST("/", rbacmiddleware.RoleAccess(
-		roleManager,
-		secretKey,
-		"post", "users/"),
-		api.Create,
-	) // add role check
+	uGroup.POST(
+		"/",
+		rbacmiddleware.RoleAccess(roleManager, secretKey),
+		api.Create)
 
-	uGroup.PATCH("/:id", api.Update)  // add role check
-	uGroup.DELETE("/:id", api.Delete) // add role check
+	uGroup.PATCH("/:id", api.Update) // add role check
+	uGroup.DELETE(
+		"/:id",
+		rbacmiddleware.RoleAccess(roleManager, secretKey),
+		api.Delete) // add role check
 }

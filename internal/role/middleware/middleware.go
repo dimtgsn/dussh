@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func RoleAccess(roleManager rbac.RoleManger, secretKey, permName, route string) gin.HandlerFunc {
+func RoleAccess(roleManager rbac.RoleManger, secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := auth.JWTHandler(c, secretKey)
 		if err != nil {
@@ -23,7 +23,7 @@ func RoleAccess(roleManager rbac.RoleManger, secretKey, permName, route string) 
 			return
 		}
 
-		granted, err := roleManager.IsGranted(userClaims.Role, permName, route)
+		granted, err := roleManager.IsGranted(userClaims.Role, c.Request.Method, c.FullPath())
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": err.Error()})
 			return

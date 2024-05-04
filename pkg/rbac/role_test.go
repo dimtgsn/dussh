@@ -6,7 +6,7 @@ import (
 )
 
 func TestGenerateRolesFromFile(t *testing.T) {
-	rolesPath := "pkg/rbac/roles.json"
+	rolesPath := "roles.json"
 	roles, err := GenerateRolesFromFile(rolesPath)
 	if err != nil {
 		t.Error(err)
@@ -20,17 +20,17 @@ func TestGenerateRolesFromFile(t *testing.T) {
 		},
 	}
 
-	expectedRolesActions := []string{"/auth/logout/", "/auth/register/"}
+	expectedRolesRoutes := []string{"apiv1users"}
 
-	var actions []string
+	var routes []string
 	for i, r := range roles {
 		assert.Equal(t, r.ID, expectedRoles[i].ID)
 		assert.Equal(t, r.Name, expectedRoles[i].Name)
 
 		for _, p := range r.permissions.ToSlice() {
-			actions = append(actions, p.actions.ToSlice()...)
+			routes = append(routes, p.routes.ToSlice()...)
 		}
 	}
 
-	assert.Equal(t, actions, expectedRolesActions)
+	assert.Equal(t, routes, expectedRolesRoutes)
 }

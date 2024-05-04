@@ -7,6 +7,9 @@ import (
 	"dussh/internal/services/auth"
 	authapi "dussh/internal/services/auth/api/v1"
 	authservice "dussh/internal/services/auth/service"
+	"dussh/internal/services/course"
+	courseapi "dussh/internal/services/course/api/v1"
+	courseservice "dussh/internal/services/course/service"
 	"dussh/internal/services/user"
 	userapi "dussh/internal/services/user/api/v1"
 	userservice "dussh/internal/services/user/service"
@@ -72,6 +75,13 @@ func MustNewModules(
 		log,
 	)
 
+	MustNewCourseModule(
+		&cfg.Auth,
+		baseRouteGroup,
+		roleManager,
+		repo,
+		log,
+	)
 }
 
 func MustNewAuthModule(
@@ -105,6 +115,18 @@ func MustNewUserModule(
 	userService := userservice.NewUserService(repo, log)
 	userAPI := userapi.NewUserAPI(userService, log)
 	user.InitRoutes(routeGroup, userAPI, roleManager, cfgAuth.SecretKey)
+}
+
+func MustNewCourseModule(
+	cfgAuth *config.Auth,
+	routeGroup *gin.RouterGroup,
+	roleManager rbac.RoleManger,
+	repo *pgsql.Repository,
+	log *zap.Logger,
+) {
+	courseService := courseservice.NewCourseService(repo, log)
+	courseAPI := courseapi.NewCourseAPI(courseService, log)
+	course.InitRoutes(routeGroup, courseAPI, roleManager, cfgAuth.SecretKey)
 }
 
 func SetAPIPath(engine *gin.Engine) (*gin.RouterGroup, error) {

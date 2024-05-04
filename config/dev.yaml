@@ -13,18 +13,6 @@ logger:
   level: "debug"
   encoding: "console"
 
-database:
-  host: "localhost"
-  port: 5432
-  user: "postgres"
-  password: "hnope171512mro"
-  db_name: "dussh"
-
 auth:
-  secret_key: "advadmippin428nfg482n"
   access_token_ttl: 2h
   refresh_token_ttl: 720h
-
-redis:
-  addr: "localhost:6379"
-  password: "E/Ru5KgRNeKGVJUEnrWDqAk+/We3dSft9NrqdCM9ya1+t9zpFTBiY4Njmj8yZOxIjt9+w8lxXH9N9pUu"

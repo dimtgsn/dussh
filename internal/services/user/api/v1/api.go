@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	domainerrors "dussh/internal/domain/errors"
 	"dussh/internal/domain/models"
 	"dussh/internal/domain/response"
 	"dussh/internal/services/user"
@@ -9,11 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 )
 
 type Service interface {
-	Get(ctx context.Context, userID int64) (*models.User, error)
+	Get(ctx context.Context, id int64) (*models.User, error)
 	Create(ctx context.Context, user *models.User) (int64, error)
+	Update(ctx context.Context, id int64, user *models.User) error
+	Delete(ctx context.Context, id int64) error
 }
 
 func NewUserAPI(service Service, log *zap.Logger) user.Api {
@@ -29,27 +33,32 @@ type userAPI struct {
 	log *zap.Logger
 }
 
-type GetRequest struct {
-	UserID int64 `json:"user_id" validate:"required"`
-}
-
 func (u *userAPI) Get(c *gin.Context) {
-	var usr models.User
-
-	if err := c.ShouldBind(&usr); err != nil {
-		response.BadRequest(c, err)
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
 		return
 	}
 
-	userInfo, err := u.svc.Get(c, usr.ID)
+	usr, err := u.svc.Get(c, userID)
 	if err != nil {
 		response.InternalError(c, err)
 		return
 	}
 
+	userInfo := models.UserInfo{
+		ID:         usr.ID,
+		FirstName:  usr.FirstName,
+		MiddleName: usr.MiddleName,
+		Surname:    usr.Surname,
+		Email:      usr.Email,
+		Phone:      usr.Phone,
+		Role:       usr.Role,
+	}
+
 	response.New(
 		http.StatusOK,
-		"successfully",
+		"get user successfully",
 		response.WithValues(map[string]any{"user": userInfo}),
 	).OK(c)
 }
@@ -80,6 +89,65 @@ func (u *userAPI) Create(c *gin.Context) {
 	).OK(c)
 }
 
-func (u *userAPI) Update(c *gin.Context) {}
+type UpdateRequest struct {
+	FirstName  string `json:"first_name,omitempty"`
+	MiddleName string `json:"middle_name,omitempty"`
+	Surname    string `json:"surname,omitempty"`
+	Email      string `json:"email,omitempty" validate:"omitempty,email"`
+	Phone      string `json:"phone,omitempty" validate:"omitempty,e164"`
+}
 
-func (u *userAPI) Delete(c *gin.Context) {}
+func (u *userAPI) Update(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	var req UpdateRequest
+	if err := c.BindJSON(&req); err != nil {
+		response.BadRequest(c, err)
+		return
+	}
+
+	if validateErrors := validator.StructValidate(req); validateErrors != nil {
+		response.BadRequest(c, validateErrors)
+		return
+	}
+
+	usr := &models.User{
+		FirstName:  req.FirstName,
+		MiddleName: req.MiddleName,
+		Surname:    req.Surname,
+		Email:      req.Email,
+		Phone:      req.Phone,
+	}
+
+	if err := u.svc.Update(c, userID, usr); err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"update user successfully",
+	).OK(c)
+}
+
+func (u *userAPI) Delete(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	if err := u.svc.Delete(c, userID); err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"delete user successfully",
+	).OK(c)
+}

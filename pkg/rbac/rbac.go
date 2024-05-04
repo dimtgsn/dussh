@@ -71,20 +71,23 @@ func (r *rbac) IsGranted(roleID int, permName, route string) (bool, error) {
 	permName = strings.ToLower(permName)
 	route = NormalizeRoute(route)
 	for _, perm := range role.permissions.ToSlice() {
-		if permName != "" {
-			if strings.ToLower(perm.Name) == permName {
-				return perm.routes.Contains(route), nil
-			}
-		} else {
-			if perm.routes.Contains(route) {
-				return true, nil
-			}
+		//if permName != "" {
+		//	if strings.ToLower(perm.Name) == permName {
+		//		return perm.routes.Contains(route), nil
+		//	}
+		//} else {
+		//	if perm.routes.Contains(route) {
+		//		return true, nil
+		//	}
+		//}
+		if strings.ToLower(perm.Name) == permName {
+			return perm.routes.Contains(route), nil
 		}
 	}
 
-	if permName != "" {
-		return false, ErrPermissionNotFound
-	}
+	//if permName != "" {
+	//	return false, ErrPermissionNotFound
+	//}
 
 	return false, nil
 }

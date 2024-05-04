@@ -310,6 +310,23 @@ func (r *Repository) SaveCourse(ctx context.Context, crs *models.Course) (int64,
 	return courseID, nil
 }
 
+func (r *Repository) SaveEvents(ctx context.Context, courseID int64, events []*models.Event) error {
+	r.log.Debug("creating course events")
+
+	if err := withTx(ctx, r.db, func(tx pgx.Tx) error {
+		if err := r.courseEventsCreate(ctx, tx, courseID, events); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	r.log.Debug("events course created successfully", zap.Int64("course_id", courseID))
+	return nil
+}
+
 func withTx(ctx context.Context, db *pgxpool.Pool, fn func(tx pgx.Tx) error) error {
 	tx, err := db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -332,7 +349,7 @@ func (r *Repository) courseEventsCreate(
 		if e != nil {
 			query, args := table.Events.
 				INSERT(table.Events.AllColumns.Except(table.Events.EventID)).
-				VALUES(e.Description, *e.StartDate, e.RecurrentCount, e.PeriodFreq, e.PeriodType, courseID).
+				VALUES(e.Description, time.Time(*e.StartDate), e.RecurrentCount, e.PeriodFreq, e.PeriodType, courseID).
 				RETURNING(table.Events.EventID).Sql()
 
 			if _, err := tx.Exec(ctx, query, args...); err != nil {
@@ -453,4 +470,23 @@ func (r *Repository) DeleteEvent(ctx context.Context, courseID, eventID int64) e
 
 	r.log.Debug("course event deleted successfully")
 	return nil
+}
+
+func (r *Repository) CheckCountEvents(ctx context.Context, courseID int64) (int, error) {
+	r.log.Debug("check count of course events")
+
+	events := table.Events
+	var count int
+
+	query, args := events.SELECT(postgres.COUNT(events.EventID)).
+		WHERE(events.CourseID.EQ(postgres.Int(courseID))).
+		Sql()
+
+	if err := r.db.QueryRow(ctx, query, args...).Scan(&count); err != nil {
+		r.log.Debug("failed to check count of course events", zap.Error(err))
+		return 0, err
+	}
+
+	r.log.Debug("check count of course events successfully")
+	return count, nil
 }

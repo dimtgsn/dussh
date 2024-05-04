@@ -16,6 +16,7 @@ import (
 type Service interface {
 	Get(ctx context.Context, id int64) (*models.Course, error)
 	Create(ctx context.Context, crs *models.Course) (int64, error)
+	AddEvents(ctx context.Context, courseID int64, events []*models.Event) error
 	Update(ctx context.Context, id int64, crs *models.Course) error
 	Delete(ctx context.Context, id int64) error
 	DeleteEvent(ctx context.Context, courseID, eventID int64) error
@@ -77,6 +78,39 @@ func (ca *courseAPI) Create(c *gin.Context) {
 		http.StatusOK,
 		"successfully",
 		response.WithValues(map[string]any{"course_id": courseID}),
+	).OK(c)
+}
+
+type AddEventsRequest struct {
+	Events []*models.Event `json:"events" validate:"required,dive"`
+}
+
+func (ca *courseAPI) AddEvents(c *gin.Context) {
+	courseID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	var req AddEventsRequest
+	if err := c.BindJSON(&req); err != nil {
+		response.BadRequest(c, err)
+		return
+	}
+
+	if validateErrors := validator.StructValidate(req); validateErrors != nil {
+		response.BadRequest(c, validateErrors)
+		return
+	}
+
+	if err := ca.svc.AddEvents(c, courseID, req.Events); err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"add events to course successfully",
 	).OK(c)
 }
 
@@ -159,6 +193,6 @@ func (ca *courseAPI) DeleteEvent(c *gin.Context) {
 
 	response.New(
 		http.StatusOK,
-		"delete course successfully",
+		"delete event course successfully",
 	).OK(c)
 }

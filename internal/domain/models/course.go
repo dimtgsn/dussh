@@ -19,7 +19,7 @@ type Event struct {
 	Description    string      `json:"description" db:"events.event_description" validate:"required"`
 	StartDate      *MyTime     `json:"start_date" db:"events.start_date" validate:"required"`
 	RecurrentCount *int64      `json:"recurrent_count" db:"events.recurrent_count" validate:"required,min=1"`
-	PeriodFreq     *int64      `json:"period_freq" db:"events.period_freq" validate:"required,min=1"`
+	PeriodFreq     *int64      `json:"period_freq" db:"events.period_freq" validate:"required,min=1,max=365"`
 	PeriodType     *PeriodType `json:"period_type" db:"events.period_type" validate:"required"`
 	CourseID       int64       `json:"course_id" db:"events.course_id"`
 }
@@ -30,7 +30,7 @@ func (mt *MyTime) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	t, err := time.Parse("2006-01-02", s)
+	t, err := time.Parse("2006-01-02 15:04:05", s)
 	if err != nil {
 		return err
 	}
@@ -48,6 +48,7 @@ type PeriodType int
 
 const (
 	Day PeriodType = iota + 1
+	Week
 	Month
 	Year
 )

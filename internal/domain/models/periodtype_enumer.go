@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-const _PeriodTypeName = "daymonthyear"
+const _PeriodTypeName = "dayweekmonthyear"
 
-var _PeriodTypeIndex = [...]uint8{0, 3, 8, 12}
+var _PeriodTypeIndex = [...]uint8{0, 3, 7, 12, 16}
 
-const _PeriodTypeLowerName = "daymonthyear"
+const _PeriodTypeLowerName = "dayweekmonthyear"
 
 func (i PeriodType) String() string {
 	i -= 1
@@ -27,25 +27,29 @@ func (i PeriodType) String() string {
 func _PeriodTypeNoOp() {
 	var x [1]struct{}
 	_ = x[Day-(1)]
-	_ = x[Month-(2)]
-	_ = x[Year-(3)]
+	_ = x[Week-(2)]
+	_ = x[Month-(3)]
+	_ = x[Year-(4)]
 }
 
-var _PeriodTypeValues = []PeriodType{Day, Month, Year}
+var _PeriodTypeValues = []PeriodType{Day, Week, Month, Year}
 
 var _PeriodTypeNameToValueMap = map[string]PeriodType{
-	_PeriodTypeName[0:3]:       Day,
-	_PeriodTypeLowerName[0:3]:  Day,
-	_PeriodTypeName[3:8]:       Month,
-	_PeriodTypeLowerName[3:8]:  Month,
-	_PeriodTypeName[8:12]:      Year,
-	_PeriodTypeLowerName[8:12]: Year,
+	_PeriodTypeName[0:3]:        Day,
+	_PeriodTypeLowerName[0:3]:   Day,
+	_PeriodTypeName[3:7]:        Week,
+	_PeriodTypeLowerName[3:7]:   Week,
+	_PeriodTypeName[7:12]:       Month,
+	_PeriodTypeLowerName[7:12]:  Month,
+	_PeriodTypeName[12:16]:      Year,
+	_PeriodTypeLowerName[12:16]: Year,
 }
 
 var _PeriodTypeNames = []string{
 	_PeriodTypeName[0:3],
-	_PeriodTypeName[3:8],
-	_PeriodTypeName[8:12],
+	_PeriodTypeName[3:7],
+	_PeriodTypeName[7:12],
+	_PeriodTypeName[12:16],
 }
 
 // PeriodTypeString retrieves an enum value from the enum constants string name.

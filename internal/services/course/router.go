@@ -1,6 +1,8 @@
+//go:generate go run /home/dmitry/dussh/pkg/rbac/rolegen
 package course
 
 import (
+	"dussh/internal/domain/models"
 	"dussh/pkg/rbac"
 	"github.com/gin-gonic/gin"
 )
@@ -20,15 +22,43 @@ func InitRoutes(
 	roleManager rbac.RoleManger,
 	secretKey string,
 ) {
-	cGroup := routeGroup.Group("courses")
+	//rolegen:routes
+	var routes = []models.Route{
+		{
+			Method:   "GET",
+			Path:     "courses/:id",
+			Handlers: []gin.HandlerFunc{api.Get},
+		},
+		{
+			Method:   "POST",
+			Path:     "courses/",
+			Role:     "employee",
+			Handlers: []gin.HandlerFunc{api.Create},
+		},
+		{
+			Method:   "POST",
+			Path:     "courses/:id/events",
+			Role:     "employee",
+			Handlers: []gin.HandlerFunc{api.AddEvents},
+		},
+		{
+			Method:   "PATCH",
+			Path:     "courses/:id",
+			Handlers: []gin.HandlerFunc{api.Update},
+		},
+		{
+			Method:   "DELETE",
+			Path:     "courses/:id",
+			Handlers: []gin.HandlerFunc{api.Delete},
+		},
+		{
+			Method:   "DELETE",
+			Path:     "courses/:id/events/:event-id",
+			Handlers: []gin.HandlerFunc{api.DeleteEvent},
+		},
+	}
 
-	cGroup.GET("/:id", api.Get)
-
-	cGroup.POST("/", api.Create)
-	cGroup.POST("/:id/events", api.AddEvents)
-
-	cGroup.PATCH("/:id", api.Update) // add role check
-
-	cGroup.DELETE("/:id", api.Delete)                       // add role check
-	cGroup.DELETE("/:id/events/:event-id", api.DeleteEvent) // add role check
+	for _, r := range routes {
+		routeGroup.Handle(r.Method, r.Path, r.Handlers...)
+	}
 }

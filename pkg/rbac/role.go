@@ -9,7 +9,6 @@ import (
 )
 
 type Role struct {
-	ID          int    `json:"id" yaml:"id"`
 	Name        string `json:"name" yaml:"name"`
 	permissions mapset.Set[*Permission]
 }
@@ -26,9 +25,12 @@ func (r *Role) SetPermissions(permissions ...*Permission) {
 	r.permissions.Append(permissions...)
 }
 
+func (r *Role) Permissions() mapset.Set[*Permission] {
+	return r.permissions
+}
+
 func (r *Role) UnmarshalJSON(data []byte) error {
 	tempRole := struct {
-		ID          int           `json:"id" yaml:"id"`
 		Name        string        `json:"name" yaml:"name"`
 		Permissions []*Permission `json:"permissions" yaml:"permissions"`
 	}{}
@@ -37,7 +39,6 @@ func (r *Role) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	r.ID = tempRole.ID
 	r.Name = tempRole.Name
 	r.permissions = mapset.NewSet[*Permission](tempRole.Permissions...)
 

@@ -5,6 +5,7 @@ import (
 	"dussh/internal/app/rbac"
 	"dussh/internal/app/repo"
 	"dussh/internal/config"
+	"dussh/internal/domain/models"
 	httpserver "dussh/internal/http"
 	"fmt"
 	"go.uber.org/zap"
@@ -29,11 +30,7 @@ func New(
 	log.Info("http app creating")
 
 	router := httpserver.NewRouter()
-	baseRouteGroup, err := httpserver.SetAPIPath(router)
-	if err != nil {
-		panic(err)
-	}
-
+	baseRouteGroup := router.Group(models.APIPath)
 	httpserver.MustNewModules(
 		cfg,
 		baseRouteGroup,

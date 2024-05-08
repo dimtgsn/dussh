@@ -6,11 +6,10 @@ import (
 )
 
 type RoleManger interface {
-	CreateRole(id int, name string, permissions ...*Permission) *Role
-	SetPermissions(roleID int, permissions ...*Permission) error
+	CreateRole(name string, permissions ...*Permission) *Role
+	SetPermissions(role *Role, permissions ...*Permission) error
 	GetByName(name string) *Role
-	GetByID(id int) *Role
-	IsGranted(roleID int, permName, route string) (bool, error)
+	IsGranted(roleName, method, route string) (bool, error)
 }
 
 type rbac struct {
@@ -23,9 +22,8 @@ func NewRoleManager(roles ...*Role) RoleManger {
 	}
 }
 
-func (r *rbac) CreateRole(id int, name string, permissions ...*Permission) *Role {
+func (r *rbac) CreateRole(name string, permissions ...*Permission) *Role {
 	role := &Role{
-		ID:          id,
 		Name:        name,
 		permissions: mapset.NewSet[*Permission](permissions...),
 	}
@@ -33,12 +31,10 @@ func (r *rbac) CreateRole(id int, name string, permissions ...*Permission) *Role
 	return role
 }
 
-func (r *rbac) SetPermissions(id int, permissions ...*Permission) error {
-	role := r.GetByID(id)
+func (r *rbac) SetPermissions(role *Role, permissions ...*Permission) error {
 	if role == nil {
 		return ErrRoleNotFound
 	}
-
 	role.SetPermissions(permissions...)
 
 	return nil
@@ -53,41 +49,21 @@ func (r *rbac) GetByName(name string) *Role {
 	return nil
 }
 
-func (r *rbac) GetByID(id int) *Role {
-	for _, role := range r.roles.ToSlice() {
-		if role.ID == id {
-			return role
-		}
-	}
-	return nil
-}
-
-func (r *rbac) IsGranted(roleID int, permName, route string) (bool, error) {
-	role := r.GetByID(roleID)
+func (r *rbac) IsGranted(roleName, method, route string) (bool, error) {
+	role := r.GetByName(roleName)
 	if role == nil {
 		return false, ErrRoleNotFound
 	}
 
-	permName = strings.ToLower(permName)
-	route = NormalizeRoute(route)
 	for _, perm := range role.permissions.ToSlice() {
-		//if permName != "" {
-		//	if strings.ToLower(perm.Name) == permName {
-		//		return perm.routes.Contains(route), nil
-		//	}
-		//} else {
-		//	if perm.routes.Contains(route) {
-		//		return true, nil
-		//	}
-		//}
-		if strings.ToLower(perm.Name) == permName {
-			return perm.routes.Contains(route), nil
+		if methodsIsEqual(perm.Method, method) {
+			return perm.routes.Contains(NormalizeRoute(route)), nil
 		}
 	}
 
-	//if permName != "" {
-	//	return false, ErrPermissionNotFound
-	//}
-
 	return false, nil
+}
+
+func methodsIsEqual(methodIn, method string) bool {
+	return strings.Compare(strings.ToLower(methodIn), strings.ToLower(method)) == 0
 }

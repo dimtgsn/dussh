@@ -18,13 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
-	"net/url"
 	"time"
-)
-
-const (
-	apiPrefix  = "api"
-	apiVersion = "v1"
 )
 
 func NewRouter() *gin.Engine {
@@ -127,13 +121,4 @@ func MustNewCourseModule(
 	courseService := courseservice.NewCourseService(repo, log)
 	courseAPI := courseapi.NewCourseAPI(courseService, log)
 	course.InitRoutes(routeGroup, courseAPI, roleManager, cfgAuth.SecretKey)
-}
-
-func SetAPIPath(engine *gin.Engine) (*gin.RouterGroup, error) {
-	apiPath, err := url.JoinPath(apiPrefix, apiVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	return engine.Group(apiPath), nil
 }

@@ -7,25 +7,29 @@ import (
 )
 
 type Permission struct {
-	Name   string `json:"name" yaml:"name"`
+	Method string `json:"method" yaml:"method"`
 	routes mapset.Set[string]
 }
 
-func NewPermission(name string, routes ...string) *Permission {
+func NewPermission(method string, routes ...string) *Permission {
 	permRoutes := mapset.NewSet[string]()
 	for _, r := range routes {
 		permRoutes.Add(NormalizeRoute(r))
 	}
 
 	return &Permission{
-		Name:   name,
+		Method: method,
 		routes: permRoutes,
 	}
 }
 
+func (p *Permission) Routes() mapset.Set[string] {
+	return p.routes
+}
+
 func (p *Permission) UnmarshalJSON(data []byte) error {
 	tempPermission := struct {
-		Name   string   `json:"name" yaml:"name"`
+		Method string   `json:"method" yaml:"method"`
 		Routes []string `json:"routes" yaml:"routes"`
 	}{}
 
@@ -33,7 +37,7 @@ func (p *Permission) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	p.Name = tempPermission.Name
+	p.Method = tempPermission.Method
 	p.routes = mapset.NewSet[string]()
 	for _, r := range tempPermission.Routes {
 		p.routes.Add(NormalizeRoute(r))
@@ -43,5 +47,5 @@ func (p *Permission) UnmarshalJSON(data []byte) error {
 }
 
 func NormalizeRoute(s string) string {
-	return strings.ReplaceAll(s, "/", "")
+	return strings.ReplaceAll(strings.TrimSpace(s), "/", "")
 }

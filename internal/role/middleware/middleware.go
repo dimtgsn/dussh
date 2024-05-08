@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"dussh/internal/domain/models"
 	"dussh/internal/role"
-	auth "dussh/internal/services/auth/middleware"
+	"dussh/internal/services/auth"
 	"dussh/pkg/jwt"
 	"dussh/pkg/rbac"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strings"
 )
 
 func RoleAccess(roleManager rbac.RoleManger, secretKey string) gin.HandlerFunc {
@@ -23,7 +25,8 @@ func RoleAccess(roleManager rbac.RoleManger, secretKey string) gin.HandlerFunc {
 			return
 		}
 
-		granted, err := roleManager.IsGranted(userClaims.Role, c.Request.Method, c.FullPath())
+		granted, err := roleManager.IsGranted(models.Role(userClaims.Role).String(),
+			c.Request.Method, routeByFullPath(c.FullPath()))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": err.Error()})
 			return
@@ -36,4 +39,8 @@ func RoleAccess(roleManager rbac.RoleManger, secretKey string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func routeByFullPath(fullPth string) string {
+	return strings.Trim(fullPth, models.APIPath)
 }

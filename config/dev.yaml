@@ -1,12 +1,9 @@
 env: "dev"
-storage_path: "./storage.db"
 
 http_server:
   address: "127.0.0.1:8082"
   timeout: 4s
   idle_timeout: 30s
-  user: "Shabby8574"
-  password: "24tf02f4jrf"
   shutdown_timeout: 10s
 
 logger:
@@ -16,3 +13,19 @@ logger:
 auth:
   access_token_ttl: 2h
   refresh_token_ttl: 720h
+
+redis:
+  addr: "localhost:6379"
+
+rabbit_mq:
+  host: "localhost"
+  port: 5672
+  notification_publisher:
+    exchange: ""
+  notification_consumer:
+    name: "notification"
+    queue: "notification"
+
+notify:
+  email_provider:
+    from: "dussh@school.com"

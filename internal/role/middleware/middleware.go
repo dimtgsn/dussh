@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func RoleAccess(roleManager rbac.RoleManger, secretKey string) gin.HandlerFunc {
+func RoleAccess(roleManager rbac.RoleManager, secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := auth.JWTHandler(c, secretKey)
 		if err != nil {

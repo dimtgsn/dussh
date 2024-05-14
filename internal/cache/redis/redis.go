@@ -17,6 +17,7 @@ type Cache interface {
 	DeleteRefreshToken(ctx context.Context, userID string, token string) error
 	UpdateRefreshToken(ctx context.Context, userID string, token string, ttl time.Duration) error
 	GetRefreshTokenByUserID(ctx context.Context, userID string) (string, error)
+	Shutdown(ctx context.Context) error
 }
 
 type redisCache struct {
@@ -118,4 +119,8 @@ func (rc *redisCache) GetRefreshTokenByUserID(ctx context.Context, userID string
 	}
 
 	return value, nil
+}
+
+func (rc *redisCache) Shutdown(ctx context.Context) error {
+	return rc.client.Shutdown(ctx).Err()
 }

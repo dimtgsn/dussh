@@ -7,7 +7,7 @@ import (
 )
 
 type App struct {
-	roleManager rbac.RoleManger
+	roleManager rbac.RoleManager
 }
 
 func New(log *zap.Logger) *App {
@@ -21,6 +21,6 @@ func New(log *zap.Logger) *App {
 	}
 }
 
-func (a *App) RoleManager() rbac.RoleManger {
+func (a *App) RoleManager() rbac.RoleManager {
 	return a.roleManager
 }

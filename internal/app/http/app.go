@@ -1,12 +1,13 @@
 package httpapp
 
 import (
-	"dussh/internal/app/cache"
 	"dussh/internal/app/rbac"
-	"dussh/internal/app/repo"
 	"dussh/internal/config"
 	"dussh/internal/domain/models"
 	httpserver "dussh/internal/http"
+	"dussh/internal/services/auth"
+	"dussh/internal/services/course"
+	"dussh/internal/services/user"
 	"fmt"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
@@ -22,8 +23,9 @@ type App struct {
 func New(
 	ctx context.Context,
 	cfg *config.Config,
-	repo *repo.App,
-	cache *cache.App,
+	authAPI auth.Api,
+	userAPI user.Api,
+	courseAPI course.Api,
 	rbac *rbac.App,
 	log *zap.Logger,
 ) *App {
@@ -34,10 +36,10 @@ func New(
 	httpserver.MustNewModules(
 		cfg,
 		baseRouteGroup,
-		repo.PGSQL(),
+		authAPI,
+		userAPI,
+		courseAPI,
 		rbac.RoleManager(),
-		cache.Redis(),
-		log,
 	)
 
 	addr := cfg.HTTPServer.Address

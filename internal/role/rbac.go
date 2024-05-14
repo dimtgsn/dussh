@@ -11,7 +11,7 @@ var (
 	ErrForbidden = errors.New("access is denied")
 )
 
-func MustNew() rbac.RoleManger {
+func MustNew() rbac.RoleManager {
 	path := fetchRolesPath()
 
 	roles, err := rbac.GenerateRolesFromFile(path)

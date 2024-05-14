@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"dussh/internal/broker/rabbit/publisher"
 	"dussh/internal/cache/redis"
 	"dussh/internal/domain/models"
 	coursev1 "dussh/internal/services/course/api/v1"
@@ -21,11 +22,13 @@ type Repository interface {
 
 func NewCourseService(
 	repository Repository,
+	enrollmentBroker publisher.Publisher[models.EnrollmentEvent],
 	log *zap.Logger,
 ) coursev1.Service {
 	return &courseService{
-		repo: repository,
-		log:  log.Named("course.service"),
+		repo:             repository,
+		enrollmentBroker: enrollmentBroker,
+		log:              log.Named("course.service"),
 	}
 }
 
@@ -36,6 +39,8 @@ var (
 type courseService struct {
 	repo  Repository
 	cache redis.Cache
+	// TODO добавить отправку в очередь событий
+	enrollmentBroker publisher.Publisher[models.EnrollmentEvent]
 
 	log *zap.Logger
 }

@@ -20,7 +20,7 @@ type Api interface {
 func InitRoutes(
 	routeGroup *gin.RouterGroup,
 	api Api,
-	roleManager rbac.RoleManger,
+	roleManager rbac.RoleManager,
 	secretKey string,
 ) {
 	//rolegen:routes

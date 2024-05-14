@@ -27,3 +27,7 @@ func New(ctx context.Context, cfgRedis *config.Redis, log *zap.Logger) *App {
 func (a *App) Redis() redis.Cache {
 	return a.cache
 }
+
+func (a *App) Shutdown(ctx context.Context) error {
+	return a.cache.Shutdown(ctx)
+}

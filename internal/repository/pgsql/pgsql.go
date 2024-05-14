@@ -273,7 +273,7 @@ func (r *Repository) GetCourse(ctx context.Context, courseID int64) (*models.Cou
 
 	csr.Events = events
 
-	return &csr, nil
+	return &csr, rows.Err()
 }
 
 func (r *Repository) SaveCourse(ctx context.Context, crs *models.Course) (int64, error) {

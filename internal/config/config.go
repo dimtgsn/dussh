@@ -10,13 +10,14 @@ import (
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"dev"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server" env-required:"true"`
-	Logger      `yaml:"logger" env-required:"true"`
-	DB          `yaml:"database" env-required:"true"`
-	Redis       `yaml:"redis" env-required:"true"`
-	Auth        `yaml:"auth" env-required:"true"`
+	Auth       `yaml:"auth" env-required:"true"`
+	Env        string `yaml:"env" env-default:"dev"`
+	HTTPServer `yaml:"http_server" env-required:"true"`
+	Logger     `yaml:"logger" env-required:"true"`
+	DB         `yaml:"database" env-required:"true"`
+	Redis      `yaml:"redis" env-required:"true"`
+	RabbitMQ   `yaml:"rabbit_mq" env-required:"true"`
+	Notify     `yaml:"notify" env-required:"true"`
 }
 
 type HTTPServer struct {
@@ -24,8 +25,6 @@ type HTTPServer struct {
 	Timeout         time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout     time.Duration `yaml:"idle_timeout" env-default:"60s"`
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" env-default:"10s"`
-	User            string        `yaml:"user" env-required:"true"`
-	Password        string        `yaml:"password" env-required:"true" env:"HTTP_SERVER_PASSWORD"`
 }
 
 type DB struct {
@@ -39,6 +38,37 @@ type DB struct {
 type Redis struct {
 	Addr     string `yaml:"addr" env:"REDIS_ADDR" env-required:"true"`
 	Password string `yaml:"password" env:"REDIS_PASSWORD" env-required:"true"`
+}
+
+type RabbitMQ struct {
+	Port                  int    `yaml:"port" env:"RABBITMQ_PORT" env-default:"5672"`
+	User                  string `yaml:"user" env:"RABBITMQ_USER" env-required:"true"`
+	Host                  string `yaml:"host" env:"RABBITMQ_HOST" env-required:"true"`
+	Password              string `yaml:"password" env:"RABBITMQ_PASSWORD" env-required:"true"`
+	NotificationPublisher `yaml:"notification_publisher"`
+	NotificationConsumer  `yaml:"notification_consumer"`
+}
+
+type NotificationPublisher struct {
+	Exchange string `yaml:"exchange"`
+}
+
+type NotificationConsumer struct {
+	Name  string `yaml:"name"`
+	Queue string `yaml:"queue"`
+}
+
+type Notify struct {
+	EmailProvider `yaml:"email_provider"`
+}
+
+type EmailProvider struct {
+	Port      int    `yaml:"port" env:"NOTIFY_EMAIL_PROVIDER_PORT" env-default:"2525"`
+	Host      string `yaml:"host" env:"NOTIFY_EMAIL_PROVIDER_HOST" env-required:"true"`
+	From      string `yaml:"from" env-default:"dussh@school.com"`
+	Username  string `yaml:"username" env:"NOTIFY_EMAIL_PROVIDER_USERNAME" env-required:"true"`
+	Password  string `yaml:"password" env:"NOTIFY_EMAIL_PROVIDER_PASSWORD" env-required:"true"`
+	TLSEnable bool   `yaml:"tls_enable" env:"NOTIFY_EMAIL_PROVIDER_TLS" env-default:"false"`
 }
 
 type Auth struct {

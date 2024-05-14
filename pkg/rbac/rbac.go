@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type RoleManger interface {
+type RoleManager interface {
 	CreateRole(name string, permissions ...*Permission) *Role
 	SetPermissions(role *Role, permissions ...*Permission) error
 	GetByName(name string) *Role
@@ -16,7 +16,7 @@ type rbac struct {
 	roles mapset.Set[*Role]
 }
 
-func NewRoleManager(roles ...*Role) RoleManger {
+func NewRoleManager(roles ...*Role) RoleManager {
 	return &rbac{
 		roles: mapset.NewSet[*Role](roles...),
 	}

@@ -10,6 +10,7 @@ type Course struct {
 	Name                    string   `json:"name" db:"courses.course_name" validate:"required"`
 	MonthlySubscriptionCost *float64 `json:"monthly_subscription_cost" db:"courses.monthly_subscription_cost" validate:"required,min=0"`
 	Events                  []*Event `json:"events" db:"events" validate:"required,dive"`
+	Employees               []int64  `json:"employees" validate:"required"`
 }
 
 type MyTime time.Time

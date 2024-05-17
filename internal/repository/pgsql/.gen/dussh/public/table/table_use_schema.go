@@ -17,10 +17,9 @@ func UseSchema(schema string) {
 	Diplomas = Diplomas.FromSchema(schema)
 	EmployeeCourses = EmployeeCourses.FromSchema(schema)
 	Employees = Employees.FromSchema(schema)
+	Enrollments = Enrollments.FromSchema(schema)
 	Events = Events.FromSchema(schema)
 	PersonalInfo = PersonalInfo.FromSchema(schema)
 	Positions = Positions.FromSchema(schema)
 	Roles = Roles.FromSchema(schema)
-	StudentCourses = StudentCourses.FromSchema(schema)
-	Students = Students.FromSchema(schema)
 }

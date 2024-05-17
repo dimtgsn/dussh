@@ -16,10 +16,14 @@ import (
 type Service interface {
 	Get(ctx context.Context, id int64) (*models.Course, error)
 	Create(ctx context.Context, crs *models.Course) (int64, error)
+	CreateEnrollment(ctx context.Context, courseID, userID int64) (int64, error)
 	AddEvents(ctx context.Context, courseID int64, events []*models.Event) error
+	AddEmployees(ctx context.Context, courseID int64, employees []int64) error
 	Update(ctx context.Context, id int64, crs *models.Course) error
 	Delete(ctx context.Context, id int64) error
 	DeleteEvent(ctx context.Context, courseID, eventID int64) error
+	DeleteEmployee(ctx context.Context, courseID, employeeID int64) error
+	DeleteEnrollment(ctx context.Context, enrollmentID int64) error
 }
 
 func NewCourseAPI(service Service, log *zap.Logger) course.Api {
@@ -114,6 +118,39 @@ func (ca *courseAPI) AddEvents(c *gin.Context) {
 	).OK(c)
 }
 
+type AddEmployeesRequest struct {
+	Employees []int64 `json:"employees" validate:"required"`
+}
+
+func (ca *courseAPI) AddEmployees(c *gin.Context) {
+	courseID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	var req AddEmployeesRequest
+	if err := c.BindJSON(&req); err != nil {
+		response.BadRequest(c, err)
+		return
+	}
+
+	if validateErrors := validator.StructValidate(req); validateErrors != nil {
+		response.BadRequest(c, validateErrors)
+		return
+	}
+
+	if err := ca.svc.AddEmployees(c, courseID, req.Employees); err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"add employees to course successfully",
+	).OK(c)
+}
+
 type UpdateRequest struct {
 	Name                    string          `json:"name,omitempty"`
 	MonthlySubscriptionCost *float64        `json:"monthly_subscription_cost,omitempty"`
@@ -194,5 +231,82 @@ func (ca *courseAPI) DeleteEvent(c *gin.Context) {
 	response.New(
 		http.StatusOK,
 		"delete event course successfully",
+	).OK(c)
+}
+
+func (ca *courseAPI) DeleteEmployee(c *gin.Context) {
+	courseID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	employeeID, err := strconv.ParseInt(c.Param("employee-id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	if err := ca.svc.DeleteEmployee(c, courseID, employeeID); err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"delete employee course bind successfully",
+	).OK(c)
+}
+
+type CreateEnrollmentRequest struct {
+	UserID int64 `json:"user_id" validate:"required"`
+}
+
+func (ca *courseAPI) CreateEnrollment(c *gin.Context) {
+	courseID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	var req CreateEnrollmentRequest
+	if err := c.BindJSON(&req); err != nil {
+		response.BadRequest(c, err)
+		return
+	}
+
+	if validateErrors := validator.StructValidate(req); validateErrors != nil {
+		response.BadRequest(c, validateErrors)
+		return
+	}
+
+	enrollmentID, err := ca.svc.CreateEnrollment(c, courseID, req.UserID)
+	if err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"create new enrollment to course successfully",
+		response.WithValues(map[string]any{"enrollment_id": enrollmentID}),
+	).OK(c)
+}
+
+func (ca *courseAPI) DeleteEnrollment(c *gin.Context) {
+	enrollmentID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, domainerrors.ErrInvalidURLPattern)
+		return
+	}
+
+	if err := ca.svc.DeleteEnrollment(c, enrollmentID); err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"delete course enrollment successfully",
 	).OK(c)
 }

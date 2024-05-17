@@ -13,6 +13,7 @@ type Api interface {
 	Create(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
+	GetAllPositions(c *gin.Context)
 }
 
 // TODO добавить auth middleware
@@ -31,10 +32,16 @@ func InitRoutes(
 			Handlers: []gin.HandlerFunc{api.Get},
 		},
 		{
+			Method:   "GET",
+			Path:     "users/positions",
+			Role:     "admin",
+			Handlers: []gin.HandlerFunc{api.GetAllPositions},
+		},
+		{
 			Method: "POST",
 			Path:   "users/",
 			Handlers: []gin.HandlerFunc{
-				rbacmiddleware.RoleAccess(roleManager, secretKey),
+				//rbacmiddleware.RoleAccess(roleManager, secretKey),
 				api.Create,
 			},
 		},
@@ -52,7 +59,7 @@ func InitRoutes(
 			Path:   "users/:id",
 			Role:   "admin",
 			Handlers: []gin.HandlerFunc{
-				rbacmiddleware.RoleAccess(roleManager, secretKey),
+				//rbacmiddleware.RoleAccess(roleManager, secretKey),
 				api.Delete,
 			},
 		},
@@ -61,17 +68,4 @@ func InitRoutes(
 	for _, r := range routes {
 		routeGroup.Handle(r.Method, r.Path, r.Handlers...)
 	}
-	//uGroup := routeGroup.Group("users")
-	//uGroup.GET("/:id", api.Get)
-	//
-	//uGroup.POST(
-	//	"/",
-	//	rbacmiddleware.RoleAccess(roleManager, secretKey),
-	//	api.Create)
-	//
-	//uGroup.PATCH("/:id", api.Update) // add role check
-	//uGroup.DELETE(
-	//	"/:id",
-	//	rbacmiddleware.RoleAccess(roleManager, secretKey),
-	//	api.Delete) // add role check
 }

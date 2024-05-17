@@ -10,10 +10,14 @@ import (
 type Api interface {
 	Get(c *gin.Context)
 	Create(c *gin.Context)
+	CreateEnrollment(c *gin.Context)
 	AddEvents(c *gin.Context)
+	AddEmployees(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
 	DeleteEvent(c *gin.Context)
+	DeleteEmployee(c *gin.Context)
+	DeleteEnrollment(c *gin.Context)
 }
 
 func InitRoutes(
@@ -42,6 +46,16 @@ func InitRoutes(
 			Handlers: []gin.HandlerFunc{api.AddEvents},
 		},
 		{
+			Method:   "POST",
+			Path:     "courses/:id/employees",
+			Handlers: []gin.HandlerFunc{api.AddEmployees},
+		},
+		{
+			Method:   "POST",
+			Path:     "courses/:id/enrollments",
+			Handlers: []gin.HandlerFunc{api.CreateEnrollment},
+		},
+		{
 			Method:   "PATCH",
 			Path:     "courses/:id",
 			Handlers: []gin.HandlerFunc{api.Update},
@@ -55,6 +69,16 @@ func InitRoutes(
 			Method:   "DELETE",
 			Path:     "courses/:id/events/:event-id",
 			Handlers: []gin.HandlerFunc{api.DeleteEvent},
+		},
+		{
+			Method:   "DELETE",
+			Path:     "courses/:id/employees/:employee-id",
+			Handlers: []gin.HandlerFunc{api.DeleteEmployee},
+		},
+		{
+			Method:   "DELETE",
+			Path:     "enrollments/:id",
+			Handlers: []gin.HandlerFunc{api.DeleteEnrollment},
 		},
 	}
 

@@ -7,7 +7,8 @@
 
 package model
 
-type StudentCourses struct {
-	CourseID  int32 `sql:"primary_key"`
-	StudentID int32 `sql:"primary_key"`
+type Enrollments struct {
+	ID             int32
+	CourseID       int32
+	PersonalInfoID int32
 }

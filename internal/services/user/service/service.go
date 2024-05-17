@@ -12,6 +12,8 @@ import (
 
 type Repository interface {
 	GetUserByID(ctx context.Context, userID int64) (*models.User, error)
+	GetEmployeePosition(ctx context.Context, id int64) (*models.Position, error)
+	GetAllUserPositions(ctx context.Context) ([]*models.Position, error)
 	SaveUser(ctx context.Context, user *models.User) (int64, error)
 	CheckUserExists(ctx context.Context, email string) (bool, error)
 	UpdateUser(ctx context.Context, id int64, user *models.User) error
@@ -38,6 +40,11 @@ type userService struct {
 func (u *userService) Get(ctx context.Context, userID int64) (*models.User, error) {
 	userInfo, err := u.repo.GetUserByID(ctx, userID)
 	return userInfo, err
+}
+
+func (u *userService) GetEmployeePosition(ctx context.Context, id int64) (*models.Position, error) {
+	position, err := u.repo.GetEmployeePosition(ctx, id)
+	return position, err
 }
 
 // TODO: add checking role access for creating
@@ -67,4 +74,8 @@ func (u *userService) Update(ctx context.Context, id int64, user *models.User) e
 
 func (u *userService) Delete(ctx context.Context, id int64) error {
 	return u.repo.DeleteUser(ctx, id)
+}
+
+func (u *userService) GetAllPositions(ctx context.Context) ([]*models.Position, error) {
+	return u.repo.GetAllUserPositions(ctx)
 }

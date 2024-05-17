@@ -68,8 +68,13 @@ func (r *Repository) SaveUser(ctx context.Context, user *models.User) (int64, er
 				personalInfo.Email, personalInfo.Phone, personalInfo.RolesID,
 				personalInfo.CredsID,
 			).
-			VALUES(user.FirstName, user.MiddleName, user.Surname,
-				user.Email, user.Phone, user.Role, credID,
+			VALUES(
+				user.FirstName, user.MiddleName, user.Surname,
+				user.Email, user.Phone,
+				table.Roles.SELECT(table.Roles.RolesID).WHERE(
+					table.Roles.Role.REGEXP_LIKE(postgres.String(user.Role.String()), false),
+				),
+				credID,
 			).RETURNING(personalInfo.PersonalInfoID).Sql()
 
 		if err := tx.QueryRow(ctx, query, args...).Scan(&userID); err != nil {
@@ -80,6 +85,15 @@ func (r *Repository) SaveUser(ctx context.Context, user *models.User) (int64, er
 				return repository.ErrUserAlreadyExists
 			}
 
+			return err
+		}
+
+		query, args = table.Employees.
+			INSERT(table.Employees.PersonalInfoID, table.Employees.PositionID).
+			VALUES(userID, user.PositionID).Sql()
+
+		if _, err := tx.Exec(ctx, query, args...); err != nil {
+			r.log.Error("failed to create employee with position id", zap.Error(err))
 			return err
 		}
 
@@ -161,6 +175,25 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*models.User, e
 	}
 
 	return &user, nil
+}
+
+func (r *Repository) GetEmployeePosition(ctx context.Context, id int64) (*models.Position, error) {
+	r.log.Debug("getting employee position")
+
+	var position models.Position
+
+	query, args := postgres.SELECT(
+		table.Positions.AllColumns,
+	).
+		FROM(table.Positions.INNER_JOIN(table.Employees, table.Positions.PositionID.EQ(table.Employees.PositionID))).
+		WHERE(table.Employees.PersonalInfoID.EQ(postgres.Int(id))).
+		Sql()
+
+	if err := pgxscan.Get(ctx, r.db, &position, query, args...); err != nil {
+		r.log.Debug("failed to get employee position", zap.Error(err))
+	}
+
+	return &position, nil
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, id int64, user *models.User) error {
@@ -287,6 +320,9 @@ func (r *Repository) SaveCourse(ctx context.Context, crs *models.Course) (int64,
 	if len(crs.Events) < 1 {
 		return 0, repository.ErrEventsRequired
 	}
+	if len(crs.Employees) < 1 {
+		return 0, repository.ErrEmployeesRequired
+	}
 
 	if err := withTx(ctx, r.db, func(tx pgx.Tx) error {
 		query, args := courses.INSERT(courses.AllColumns.Except(courses.CourseID)).
@@ -298,6 +334,10 @@ func (r *Repository) SaveCourse(ctx context.Context, crs *models.Course) (int64,
 		}
 
 		if err := r.courseEventsCreate(ctx, tx, courseID, crs.Events); err != nil {
+			return err
+		}
+
+		if err := r.courseEmployeesCreate(ctx, tx, courseID, crs.Employees); err != nil {
 			return err
 		}
 
@@ -325,6 +365,67 @@ func (r *Repository) SaveEvents(ctx context.Context, courseID int64, events []*m
 
 	r.log.Debug("events course created successfully", zap.Int64("course_id", courseID))
 	return nil
+}
+
+func (r *Repository) SaveEmployees(ctx context.Context, courseID int64, employees []int64) error {
+	r.log.Debug("creating course employees")
+
+	if err := withTx(ctx, r.db, func(tx pgx.Tx) error {
+		if err := r.courseEmployeesCreate(ctx, tx, courseID, employees); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	r.log.Debug("employees course created successfully", zap.Int64("course_id", courseID))
+	return nil
+}
+
+func (r *Repository) SaveEnrollment(ctx context.Context, courseID, userID int64) (int64, error) {
+	r.log.Debug("creating course enrollment")
+
+	var enrollmentID int64
+	if err := withTx(ctx, r.db, func(tx pgx.Tx) error {
+		query, args := table.Enrollments.
+			INSERT(table.Enrollments.AllColumns.Except(table.Enrollments.ID)).
+			VALUES(courseID, userID).
+			RETURNING(table.Enrollments.ID).Sql()
+
+		if err := tx.QueryRow(ctx, query, args...).Scan(&enrollmentID); err != nil {
+			var pgErr *pgconn.PgError
+
+			r.log.Error("failed to create course enrollment", zap.Error(err))
+			if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+				return repository.ErrEnrollmentAlreadyExists
+			}
+			return err
+		}
+
+		query, args = table.PersonalInfo.
+			UPDATE(table.PersonalInfo.RolesID).
+			SET(
+				table.Roles.SELECT(table.Roles.RolesID).
+					WHERE(
+						table.Roles.Role.REGEXP_LIKE(postgres.String(models.Student.String()), false),
+					),
+			).
+			WHERE(table.PersonalInfo.PersonalInfoID.EQ(postgres.Int(userID))).Sql()
+
+		if _, err := tx.Exec(ctx, query, args...); err != nil {
+			r.log.Error("failed to update user role to student", zap.Error(err))
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+
+	r.log.Debug("course enrollment created successfully")
+	return enrollmentID, nil
 }
 
 func withTx(ctx context.Context, db *pgxpool.Pool, fn func(tx pgx.Tx) error) error {
@@ -356,6 +457,31 @@ func (r *Repository) courseEventsCreate(
 				r.log.Error("failed to create course event", zap.Error(err))
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Repository) courseEmployeesCreate(
+	ctx context.Context,
+	tx pgx.Tx,
+	courseID int64,
+	userIDs []int64,
+) error {
+	for _, u := range userIDs {
+		query, args := table.EmployeeCourses.
+			INSERT(table.EmployeeCourses.AllColumns).
+			VALUES(
+				courseID,
+				table.Employees.INNER_JOIN(table.PersonalInfo, table.PersonalInfo.PersonalInfoID.EQ(table.Employees.PersonalInfoID)).
+					SELECT(table.Employees.EmployeeID).
+					WHERE(table.PersonalInfo.PersonalInfoID.EQ(postgres.Int(u))),
+			).Sql()
+
+		if _, err := tx.Exec(ctx, query, args...); err != nil {
+			r.log.Error("failed to bind employee to course", zap.Error(err))
+			return err
 		}
 	}
 
@@ -472,6 +598,45 @@ func (r *Repository) DeleteEvent(ctx context.Context, courseID, eventID int64) e
 	return nil
 }
 
+func (r *Repository) DeleteEmployee(ctx context.Context, courseID, employeeID int64) error {
+	r.log.Debug("deleting course employee")
+
+	query, args := table.EmployeeCourses.DELETE().
+		WHERE(
+			postgres.AND(
+				table.EmployeeCourses.CourseID.EQ(postgres.Int(courseID)),
+				table.EmployeeCourses.EmployeeID.EQ(postgres.Int(employeeID)),
+			),
+		).
+		Sql()
+
+	if _, err := r.db.Exec(ctx, query, args...); err != nil {
+		r.log.Debug("failed to delete course employee", zap.Error(err))
+		return err
+	}
+
+	r.log.Debug("course employee deleted successfully")
+	return nil
+}
+
+func (r *Repository) DeleteEnrollment(ctx context.Context, enrollmentID int64) error {
+	r.log.Debug("deleting course enrollment")
+
+	query, args := table.Enrollments.DELETE().
+		WHERE(
+			table.Enrollments.ID.EQ(postgres.Int(enrollmentID)),
+		).
+		Sql()
+
+	if _, err := r.db.Exec(ctx, query, args...); err != nil {
+		r.log.Debug("failed to delete course employee", zap.Error(err))
+		return err
+	}
+
+	r.log.Debug("course enrollment deleted successfully")
+	return nil
+}
+
 func (r *Repository) CheckCountEvents(ctx context.Context, courseID int64) (int, error) {
 	r.log.Debug("check count of course events")
 
@@ -489,4 +654,47 @@ func (r *Repository) CheckCountEvents(ctx context.Context, courseID int64) (int,
 
 	r.log.Debug("check count of course events successfully")
 	return count, nil
+}
+
+func (r *Repository) CheckCountEmployees(ctx context.Context, courseID int64) (int, error) {
+	r.log.Debug("check count of course employees")
+
+	employeeCourses := table.EmployeeCourses
+	var count int
+
+	query, args := employeeCourses.SELECT(postgres.COUNT(employeeCourses.EmployeeID)).
+		WHERE(employeeCourses.CourseID.EQ(postgres.Int(courseID))).
+		Sql()
+
+	if err := r.db.QueryRow(ctx, query, args...).Scan(&count); err != nil {
+		r.log.Debug("failed to check count of course employees", zap.Error(err))
+		return 0, err
+	}
+
+	r.log.Debug("check count of course employees successfully")
+	return count, nil
+}
+
+func (r *Repository) GetAllUserPositions(ctx context.Context) ([]*models.Position, error) {
+	var positions []*models.Position
+
+	query, args := table.Positions.
+		SELECT(table.Positions.AllColumns).
+		Sql()
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		r.log.Debug("failed to get all positions", zap.Error(err))
+		return nil, err
+	}
+
+	if err := pgxscan.ScanAll(&positions, rows); err != nil {
+		r.log.Debug("failed to get all positions", zap.Error(err))
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.ErrPositionsNotFound
+		}
+		return nil, err
+	}
+
+	return positions, nil
 }

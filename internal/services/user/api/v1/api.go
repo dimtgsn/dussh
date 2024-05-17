@@ -7,6 +7,7 @@ import (
 	"dussh/internal/domain/response"
 	"dussh/internal/services/user"
 	"dussh/pkg/validator"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -15,6 +16,8 @@ import (
 
 type Service interface {
 	Get(ctx context.Context, id int64) (*models.User, error)
+	GetEmployeePosition(ctx context.Context, id int64) (*models.Position, error)
+	GetAllPositions(ctx context.Context) ([]*models.Position, error)
 	Create(ctx context.Context, user *models.User) (int64, error)
 	Update(ctx context.Context, id int64, user *models.User) error
 	Delete(ctx context.Context, id int64) error
@@ -56,10 +59,31 @@ func (u *userAPI) Get(c *gin.Context) {
 		Role:       usr.Role,
 	}
 
+	if usr.Role == models.Employee {
+		position, err := u.svc.GetEmployeePosition(c, userID)
+		if err == nil && position != nil {
+			userInfo.PositionName = position.Name
+		}
+	}
+
 	response.New(
 		http.StatusOK,
 		"get user successfully",
 		response.WithValues(map[string]any{"user": userInfo}),
+	).OK(c)
+}
+
+func (u *userAPI) GetAllPositions(c *gin.Context) {
+	positions, err := u.svc.GetAllPositions(c)
+	if err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"get all employee positions successfully",
+		response.WithValues(map[string]any{"positions": positions}),
 	).OK(c)
 }
 
@@ -68,6 +92,11 @@ func (u *userAPI) Create(c *gin.Context) {
 
 	if err := c.BindJSON(&usr); err != nil {
 		response.BadRequest(c, err)
+		return
+	}
+
+	if usr.Role == models.Employee && usr.PositionID == 0 {
+		response.BadRequest(c, errors.New("employee position id is required field"))
 		return
 	}
 

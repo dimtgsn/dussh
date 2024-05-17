@@ -47,13 +47,4 @@ func InitRoutes(routeGroup *gin.RouterGroup, api Api, secretKey string) {
 	for _, r := range routes {
 		routeGroup.Handle(r.Method, r.Path, r.Handlers...)
 	}
-	//aGroup := routeGroup.Group("auth")
-	//
-	//aGroup.POST("/register/", api.Register)
-	//aGroup.POST("/login/", api.Login)
-	//
-	//withJWTAuthGroup := aGroup.Group("").Use(middleware.JWTAuth(secretKey))
-	//
-	//withJWTAuthGroup.POST("/logout/", api.Logout)
-	//withJWTAuthGroup.POST("/refresh-token/", api.RefreshToken)
 }

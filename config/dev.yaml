@@ -21,7 +21,7 @@ rabbit_mq:
   host: "localhost"
   port: 5672
   notification_publisher:
-    exchange: ""
+    exchange: "notification"
   notification_consumer:
     name: "notification"
     queue: "notification"

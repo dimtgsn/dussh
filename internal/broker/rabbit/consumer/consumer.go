@@ -11,7 +11,7 @@ import (
 var ErrConsumerClosed = errors.New("consumer closed")
 
 type Consumer interface {
-	Consume() error
+	Consume(context.Context) error
 	Shutdown(context.Context) error
 }
 
@@ -33,7 +33,7 @@ func newConsumer[T any](
 	}
 }
 
-func (c *consumer[T]) consume(callback consumeCallback[T]) error {
+func (c *consumer[T]) consume(ctx context.Context, callback consumeCallback[T]) error {
 	b, close, err := rabbit.NewChannel(c.rc)
 	if err != nil {
 		return err
@@ -47,17 +47,14 @@ func (c *consumer[T]) consume(callback consumeCallback[T]) error {
 		false,
 		false,
 		false,
-		nil,
-	)
+		nil)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
 	c.cancel = cancel
-
 	for {
 		select {
 		case <-ctx.Done():

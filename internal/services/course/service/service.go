@@ -60,7 +60,19 @@ func (c *courseService) Create(ctx context.Context, crs *models.Course) (int64, 
 }
 
 func (c *courseService) CreateEnrollment(ctx context.Context, courseID, userID int64) (int64, error) {
-	return c.repo.SaveEnrollment(ctx, courseID, userID)
+	enrollmentID, err := c.repo.SaveEnrollment(ctx, courseID, userID)
+	if err == nil && enrollmentID != 0 {
+		err := c.enrollmentBroker.Publish(ctx, "notification", models.EnrollmentEvent{
+			CourseID: courseID,
+			UserID:   userID,
+		})
+		if err != nil {
+			c.log.Error("failed to publish enrollment event to notification exchange")
+			return 0, err
+		}
+	}
+
+	return enrollmentID, nil
 }
 
 func (c *courseService) AddEvents(ctx context.Context, courseID int64, events []*models.Event) error {

@@ -10,7 +10,6 @@ import (
 	"dussh/pkg/notify/notification"
 	"errors"
 	"html/template"
-	"log"
 	"strings"
 )
 
@@ -69,14 +68,14 @@ func (s *service) CreateNotificationByEnrollmentEvent(
 
 	t := template.New("email.html")
 
-	t, err = t.ParseFiles("../../domain/template/email.html")
+	t, err = t.ParseFiles("internal/domain/template/email.html")
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
 	var tpl bytes.Buffer
 	if err := t.Execute(&tpl, info); err != nil {
-		log.Println(err)
+		return nil, err
 	}
 
 	n := &notification.Notification{

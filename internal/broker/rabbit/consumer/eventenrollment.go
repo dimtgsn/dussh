@@ -28,8 +28,8 @@ func NewEventEnrollmentConsumer(
 	}
 }
 
-func (c *eventEnrollmentConsumer) Consume() error {
-	return c.consume(c.consumeCallback)
+func (c *eventEnrollmentConsumer) Consume(ctx context.Context) error {
+	return c.consume(ctx, c.consumeCallback)
 }
 
 func (c *eventEnrollmentConsumer) Shutdown(ctx context.Context) error {

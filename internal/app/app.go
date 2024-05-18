@@ -83,7 +83,7 @@ func New(ctx context.Context, log *zap.Logger, cfg config.Config) *App {
 }
 
 func (a *App) Run() {
-	//a.broker.MustRun()
+	go a.broker.MustRun()
 	a.httpServer.MustRun()
 }
 

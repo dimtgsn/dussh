@@ -18,6 +18,7 @@ type Api interface {
 	DeleteEvent(c *gin.Context)
 	DeleteEmployee(c *gin.Context)
 	DeleteEnrollment(c *gin.Context)
+	List(c *gin.Context)
 }
 
 func InitRoutes(
@@ -79,6 +80,11 @@ func InitRoutes(
 			Method:   "DELETE",
 			Path:     "enrollments/:id",
 			Handlers: []gin.HandlerFunc{api.DeleteEnrollment},
+		},
+		{
+			Method:   "PUT",
+			Path:     "courses",
+			Handlers: []gin.HandlerFunc{api.List},
 		},
 	}
 

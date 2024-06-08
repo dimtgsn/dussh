@@ -21,6 +21,7 @@ type Service interface {
 	Create(ctx context.Context, user *models.User) (int64, error)
 	Update(ctx context.Context, id int64, user *models.User) error
 	Delete(ctx context.Context, id int64) error
+	List(ctx context.Context) ([]*models.User, error)
 }
 
 func NewUserAPI(service Service, log *zap.Logger) user.Api {
@@ -178,5 +179,20 @@ func (u *userAPI) Delete(c *gin.Context) {
 	response.New(
 		http.StatusOK,
 		"delete user successfully",
+	).OK(c)
+}
+
+func (u *userAPI) List(c *gin.Context) {
+	users, err := u.svc.List(c)
+	if err != nil {
+		response.InternalError(c, err)
+	}
+
+	response.New(
+		http.StatusOK,
+		"user list received successfully",
+		response.WithValues(map[string]any{
+			"users": users,
+		}),
 	).OK(c)
 }

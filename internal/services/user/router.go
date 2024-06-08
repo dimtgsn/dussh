@@ -3,7 +3,6 @@ package user
 
 import (
 	"dussh/internal/domain/models"
-	rbacmiddleware "dussh/internal/role/middleware"
 	"dussh/pkg/rbac"
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +12,7 @@ type Api interface {
 	Create(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
+	List(c *gin.Context)
 	GetAllPositions(c *gin.Context)
 }
 
@@ -50,7 +50,7 @@ func InitRoutes(
 			Path:   "users/:id",
 			Role:   "admin",
 			Handlers: []gin.HandlerFunc{
-				rbacmiddleware.RoleAccess(roleManager, secretKey),
+				//rbacmiddleware.RoleAccess(roleManager, secretKey),
 				api.Update,
 			},
 		},
@@ -62,6 +62,11 @@ func InitRoutes(
 				//rbacmiddleware.RoleAccess(roleManager, secretKey),
 				api.Delete,
 			},
+		},
+		{
+			Method:   "PUT",
+			Path:     "users",
+			Handlers: []gin.HandlerFunc{api.List},
 		},
 	}
 

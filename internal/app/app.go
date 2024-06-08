@@ -83,7 +83,9 @@ func New(ctx context.Context, log *zap.Logger, cfg config.Config) *App {
 }
 
 func (a *App) Run() {
-	go a.broker.MustRun()
+	// TODO uncommented
+	//ctx := context.Background()
+	//go a.broker.MustRun(ctx)
 	a.httpServer.MustRun()
 }
 

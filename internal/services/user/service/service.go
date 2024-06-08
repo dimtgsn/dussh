@@ -18,6 +18,7 @@ type Repository interface {
 	CheckUserExists(ctx context.Context, email string) (bool, error)
 	UpdateUser(ctx context.Context, id int64, user *models.User) error
 	DeleteUser(ctx context.Context, id int64) error
+	GetUsers(ctx context.Context) ([]*models.User, error)
 }
 
 func NewUserService(
@@ -78,4 +79,8 @@ func (u *userService) Delete(ctx context.Context, id int64) error {
 
 func (u *userService) GetAllPositions(ctx context.Context) ([]*models.Position, error) {
 	return u.repo.GetAllUserPositions(ctx)
+}
+
+func (u *userService) List(ctx context.Context) ([]*models.User, error) {
+	return u.repo.GetUsers(ctx)
 }

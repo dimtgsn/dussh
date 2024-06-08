@@ -23,6 +23,7 @@ type Repository interface {
 	DeleteEnrollment(ctx context.Context, enrollmentID int64) error
 	CheckCountEvents(ctx context.Context, courseID int64) (int, error)
 	CheckCountEmployees(ctx context.Context, courseID int64) (int, error)
+	GetCourses(ctx context.Context) ([]*models.Course, error)
 }
 
 func NewCourseService(
@@ -119,4 +120,8 @@ func (c *courseService) DeleteEmployee(ctx context.Context, courseID, employeeID
 
 func (c *courseService) DeleteEnrollment(ctx context.Context, enrollmentID int64) error {
 	return c.repo.DeleteEnrollment(ctx, enrollmentID)
+}
+
+func (c *courseService) List(ctx context.Context) ([]*models.Course, error) {
+	return c.repo.GetCourses(ctx)
 }

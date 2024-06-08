@@ -24,6 +24,7 @@ type Service interface {
 	DeleteEvent(ctx context.Context, courseID, eventID int64) error
 	DeleteEmployee(ctx context.Context, courseID, employeeID int64) error
 	DeleteEnrollment(ctx context.Context, enrollmentID int64) error
+	List(ctx context.Context) ([]*models.Course, error)
 }
 
 func NewCourseAPI(service Service, log *zap.Logger) course.Api {
@@ -308,5 +309,21 @@ func (ca *courseAPI) DeleteEnrollment(c *gin.Context) {
 	response.New(
 		http.StatusOK,
 		"delete course enrollment successfully",
+	).OK(c)
+}
+
+func (ca *courseAPI) List(c *gin.Context) {
+	courses, err := ca.svc.List(c)
+	if err != nil {
+		response.InternalError(c, err)
+		return
+	}
+
+	response.New(
+		http.StatusOK,
+		"course list received successfully",
+		response.WithValues(map[string]any{
+			"courses": courses,
+		}),
 	).OK(c)
 }

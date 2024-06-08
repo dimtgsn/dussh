@@ -38,8 +38,8 @@ func New(
 	}
 }
 
-func (a *App) MustRun() {
-	if err := a.eventEnrollmentConsumer.Consume(); err != nil {
+func (a *App) MustRun(ctx context.Context) {
+	if err := a.eventEnrollmentConsumer.Consume(ctx); err != nil {
 		if errors.Is(err, consumer.ErrConsumerClosed) {
 			return
 		}

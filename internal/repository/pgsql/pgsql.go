@@ -698,3 +698,50 @@ func (r *Repository) GetAllUserPositions(ctx context.Context) ([]*models.Positio
 
 	return positions, nil
 }
+
+func (r *Repository) GetUsers(ctx context.Context) ([]*models.User, error) {
+	var users []*models.User
+
+	query, args := table.PersonalInfo.SELECT(
+		table.PersonalInfo.AllColumns.Except(table.PersonalInfo.CredsID),
+	).Sql()
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		r.log.Debug("failed to get all users", zap.Error(err))
+		return nil, err
+	}
+
+	if err := pgxscan.ScanAll(&users, rows); err != nil {
+		r.log.Debug("failed to get all users", zap.Error(err))
+		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.Debug("no users")
+			return users, nil
+		}
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *Repository) GetCourses(ctx context.Context) ([]*models.Course, error) {
+	var courses []*models.Course
+
+	query, args := table.Courses.SELECT(table.Courses.AllColumns).Sql()
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		r.log.Debug("failed to get all courses", zap.Error(err))
+		return nil, err
+	}
+
+	if err := pgxscan.ScanAll(&courses, rows); err != nil {
+		r.log.Debug("failed to get all courses", zap.Error(err))
+		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.Debug("no courses")
+			return courses, nil
+		}
+		return nil, err
+	}
+
+	return courses, nil
+}
